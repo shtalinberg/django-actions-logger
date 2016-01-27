@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 import json
 
 from actionslog.diff import model_instance_diff
-from actionslog.models import LogEntry
+from actionslog.models import LogAction
 
 
 def action_log_create(sender, instance, created, **kwargs):
@@ -15,9 +15,9 @@ def action_log_create(sender, instance, created, **kwargs):
     if created:
         changes = model_instance_diff(None, instance)
 
-        log_entry = LogEntry.objects.log_create(
-            instance,
-            action=LogEntry.Action.CREATE,
+        log_entry = LogAction.objects.create_log_action(
+            instance=instance,
+            action=LogAction.CREATE,
             changes=json.dumps(changes),
         )
 
@@ -40,9 +40,9 @@ def action_log_update(sender, instance, **kwargs):
 
             # Log an entry only if there are changes
             if changes:
-                log_entry = LogEntry.objects.log_create(
-                    instance,
-                    action=LogEntry.Action.UPDATE,
+                log_entry = LogAction.objects.create_log_action(
+                    instance=instance,
+                    action=LogAction.UPDATE,
                     changes=json.dumps(changes),
                 )
 
@@ -56,8 +56,8 @@ def action_log_delete(sender, instance, **kwargs):
     if instance.pk is not None:
         changes = model_instance_diff(instance, None)
 
-        log_entry = LogEntry.objects.log_create(
-            instance,
-            action=LogEntry.Action.DELETE,
+        log_entry = LogAction.objects.create_log_action(
+            instance=instance,
+            action=LogAction.DELETE,
             changes=json.dumps(changes),
         )
