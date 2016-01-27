@@ -25,3 +25,30 @@ Quick start
 
 2. Run `python manage.py migrate` to create models.
 
+
+Usage
+-----
+
+Simple::
+
+    status_msg = 'Reset password %s' % ('success' if success else 'error',)
+    la_kwargs = {
+        'request': request,
+        'instance': obj,
+        'user': request.user,
+        'action_info': {'info': status_msg},
+    }
+    LogAction.objects.create_log_action(**la_kwargs)
+
+or ::
+
+    status_msg = 'Reset password %s' % ('success' if success else 'error',)
+    la_kwargs = {
+        'request': request,
+        'instance': obj,
+        'user': request.user,
+        'action': LogAction.SUCCESS if success else LogAction.ERROR,
+        'changes': status_msg,
+    }
+    LogAction.objects.create_log_action(**la_kwargs)
+

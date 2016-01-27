@@ -48,7 +48,7 @@ class LogActionManager(models.Manager):
 
         changes = kwargs.get('changes', None)
 
-        if instance is not None and changes is not None:
+        if instance is not None:
             pk = self._get_pk_value(instance)
 
             kwargs.setdefault('content_type', ContentType.objects.get_for_model(instance))

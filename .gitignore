@@ -62,5 +62,7 @@ target/
 .ipynb_checkpoints
 
 .venv/
+help-man/
 *.sqlite3
 tests/db.sqlite3
+*.sublime-*
