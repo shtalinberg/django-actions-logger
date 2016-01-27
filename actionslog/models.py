@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import QuerySet, Q
 from django.utils.encoding import python_2_unicode_compatible, smart_text
+from django.utils.six import iteritems, integer_types
 from django.utils.translation import ugettext_lazy as _
 
 from jsonfield import JSONField
@@ -149,7 +150,7 @@ class LogAction(models.Model):
     def __str__(self):
         return _("Logged {repr:s}").format(repr=self.object_repr)
 
-    property
+    @property
     def changes_dict(self):
         """
         :return: The changes recorded in this log entry as a dictionary object.
