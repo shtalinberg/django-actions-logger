@@ -107,13 +107,13 @@ class LogAction(models.Model):
 
     CREATE = 100
     VIEW = 150
-    CHANGE = 200
+    UPDATE = 200
     DELETE = 300
 
     ACTION_CHOICES = (
         (CREATE, _("create")),
         (VIEW, _("view")),
-        (CHANGE, _("change")),
+        (UPDATE, _("update")),
         (DELETE, _("delete")),
     )
 
