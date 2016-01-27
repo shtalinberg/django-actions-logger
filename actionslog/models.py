@@ -22,9 +22,9 @@ class LogActionManager(models.Manager):
         is given.
         :param instance: The model instance to log a change for.
         :type instance: Model
-        :param kwargs: Field overrides for the :py:class:`LogEntry` object.
+        :param kwargs: Field overrides for the :py:class:`LogAction` object.
         :return: The new log entry or `None` if there were no changes.
-        :rtype: LogEntry
+        :rtype: LogAction
         """
         instance = kwargs.get('instance', None)
         changes = kwargs.get('changes', None)
@@ -44,7 +44,7 @@ class LogActionManager(models.Manager):
 
             # Delete log entries with the same pk as a newly created model. This should only be necessary when an pk is
             # used twice.
-            if kwargs.get('action', None) is LogEntry.CREATE:
+            if kwargs.get('action', None) is LogAction.CREATE:
                 if kwargs.get('object_id', None) is not None and self.filter(content_type=kwargs.get('content_type'), object_id=kwargs.get('object_id')).exists():
                     self.filter(content_type=kwargs.get('content_type'), object_id=kwargs.get('object_id')).delete()
                 else:
@@ -74,7 +74,7 @@ class LogActionManager(models.Manager):
         Get log entries for the objects in the specified queryset.
         :param queryset: The queryset to get the log entries for.
         :type queryset: QuerySet
-        :return: The LogEntry objects for the objects in the given queryset.
+        :return: The LogAction objects for the objects in the given queryset.
         :rtype: QuerySet
         """
         if not isinstance(queryset, QuerySet) or queryset.count() == 0:
@@ -165,7 +165,7 @@ class LogAction(models.Model):
         """
         Return the changes recorded in this log entry as a string. The formatting of the string can be customized by
         setting alternate values for colon, arrow and separator. If the formatting is still not satisfying, please use
-        :py:func:`LogEntry.changes_dict` and format the string yourself.
+        :py:func:`LogAction.changes_dict` and format the string yourself.
         :param colon: The string to place between the field name and the values.
         :param arrow: The string to place between each old and new value.
         :param separator: The string to place between each field.
