@@ -27,6 +27,9 @@ class LogActionManager(models.Manager):
         :rtype: LogAction
         """
         instance = kwargs.get('instance', None)
+        if instance is not None:
+            del instance['instance']
+
         changes = kwargs.get('changes', None)
         pk = self._get_pk_value(instance)
 
