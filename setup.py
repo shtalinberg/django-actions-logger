@@ -42,7 +42,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 setup(
     name='django-actions-logger',
     version=project.get_version(),
-    packages=['actionslog'],
+    packages=['actionslog', 'actionslog.migrations'],
     include_package_data=True,
     url='https://github.com/shtalinberg/django-actions-logger',
     license='MIT',
