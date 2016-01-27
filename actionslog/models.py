@@ -4,7 +4,9 @@ from __future__ import unicode_literals
 import json
 
 from django.conf import settings
+from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import NoReverseMatch, reverse
 from django.db import models
 from django.db.models import QuerySet, Q
 from django.utils.encoding import python_2_unicode_compatible, smart_text
@@ -12,6 +14,8 @@ from django.utils.six import iteritems, integer_types
 from django.utils.translation import ugettext_lazy as _
 
 from jsonfield import JSONField
+
+from .signals import action_logged
 
 
 class LogActionManager(models.Manager):
@@ -30,10 +34,23 @@ class LogActionManager(models.Manager):
         if instance is not None:
             del kwargs['instance']
 
+        request = kwargs.get('request', None)
+        if request is not None:
+            del kwargs['request']
+            # Let's grab the current IP of the user.
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                remote_ip = x_forwarded_for.split(',')[0]
+            else:
+                remote_ip = request.META.get('REMOTE_ADDR')
+            kwargs.setdefault('remote_ip', remote_ip)
+
+
         changes = kwargs.get('changes', None)
-        pk = self._get_pk_value(instance)
 
         if instance is not None and changes is not None:
+            pk = self._get_pk_value(instance)
+
             kwargs.setdefault('content_type', ContentType.objects.get_for_model(instance))
             kwargs.setdefault('object_pk', pk)
             kwargs.setdefault('object_repr', smart_text(instance))
@@ -42,6 +59,7 @@ class LogActionManager(models.Manager):
                 kwargs.setdefault('object_id', pk)
 
             get_object_extra_info = getattr(instance, 'get_object_extra_info', None)
+
             if callable(get_object_extra_info):
                 kwargs.setdefault('object_extra_info', get_object_extra_info())
 
@@ -53,8 +71,9 @@ class LogActionManager(models.Manager):
                 else:
                     self.filter(content_type=kwargs.get('content_type'), object_pk=kwargs.get('object_pk', '')).delete()
 
-        return self.create(**kwargs)
-        return None
+        action_log = self.create(**kwargs)
+        action_logged.send(sender=LogAction, action=action_log)
+        return action_log
 
     def get_for_model(self, model):
         """
@@ -109,17 +128,32 @@ class LogActionManager(models.Manager):
 
 @python_2_unicode_compatible
 class LogAction(models.Model):
-
     CREATE = 100
-    VIEW = 150
+    SUCCESS = 110
+    ACTIVATE = 130
+    AUTH = 150
+    VIEW = 180
     UPDATE = 200
+    SUSPEND = 250
+    UNSUSPEND = 260
     DELETE = 300
+    TERMINATE = 500
+    FAILED = 999
+    ERROR = 1000
 
     ACTION_CHOICES = (
         (CREATE, _("create")),
+        (SUCCESS, _("success")),
+        (ACTIVATE, _("activate")),
+        (AUTH, _("authorize")),
         (VIEW, _("view")),
         (UPDATE, _("update")),
+        (SUSPEND, _("suspend")),
+        (UNSUSPEND, _("unsuspend")),
         (DELETE, _("delete")),
+        (TERMINATE, _("terminate")),
+        (FAILED, _("failed")),
+        (ERROR, _("error")),
     )
 
     content_type = models.ForeignKey('contenttypes.ContentType', related_name='+',
@@ -141,7 +175,7 @@ class LogAction(models.Model):
     changes = models.TextField(blank=True, verbose_name=_("change message"))
 
     remote_ip = models.GenericIPAddressField(verbose_name=_("remote IP"), blank=True, null=True)
-    created_at = models.DateTimeField(verbose_name=_("created at"), auto_now_add=True)
+    created_at = models.DateTimeField(verbose_name=_("created at"), auto_now_add=True, db_index=True)
 
     objects = LogActionManager()
 
@@ -152,6 +186,22 @@ class LogAction(models.Model):
 
     def __str__(self):
         return _("Logged {repr:s}").format(repr=self.object_repr)
+
+    def get_edited_object(self):
+        "Returns the edited object represented by this log entry"
+        return self.content_type.get_object_for_this_type(pk=self.object_id)
+
+    def get_admin_url(self):
+        """
+        Returns the admin URL to edit the object represented by this log entry.
+        """
+        if self.content_type and self.object_id:
+            url_name = 'admin:%s_%s_change' % (self.content_type.app_label, self.content_type.model)
+            try:
+                return reverse(url_name, args=(quote(self.object_id),))
+            except NoReverseMatch:
+                pass
+        return None
 
     @property
     def changes_dict(self):

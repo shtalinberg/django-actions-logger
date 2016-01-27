@@ -9,6 +9,7 @@ VENV_LINK = os.path.join(VENV, 'local')
 install_requires = [
     'Django>=1.8',
     'django-jsonfield>=0.9.15',
+    'pytz>=2015.7',
 ]
 
 project = __import__(PROJECT_NAME)
