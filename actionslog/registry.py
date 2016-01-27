@@ -6,10 +6,10 @@ from django.db.models import Model
 
 class ActionslogModelRegistry(object):
     """
-    A registry that keeps track of the models that use Auditlog to track changes.
+    A registry that keeps track of the models that use actionslog to track changes.
     """
     def __init__(self, create=True, update=True, delete=True, custom=None):
-        from auditlog.receivers import log_create, log_update, log_delete
+        from actionslog.receivers import log_create, log_update, log_delete
 
         self._registry = {}
         self._signals = {}
@@ -26,7 +26,7 @@ class ActionslogModelRegistry(object):
 
     def register(self, model, include_fields=[], exclude_fields=[]):
         """
-        Register a model with auditlog. Auditlog will then track mutations on this model's instances.
+        Register a model with actionslog. Actionslog will then track mutations on this model's instances.
 
         :param model: The model to register.
         :type model: Model
@@ -46,7 +46,7 @@ class ActionslogModelRegistry(object):
 
     def contains(self, model):
         """
-        Check if a model is registered with auditlog.
+        Check if a model is registered with actionslog.
 
         :param model: The model to check.
         :type model: Model
@@ -57,7 +57,7 @@ class ActionslogModelRegistry(object):
 
     def unregister(self, model):
         """
-        Unregister a model with auditlog. This will not affect the database.
+        Unregister a model with actionslog. This will not affect the database.
 
         :param model: The model to unregister.
         :type model: Model
