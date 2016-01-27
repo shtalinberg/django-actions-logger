@@ -28,7 +28,6 @@ setup(
     version=project.get_version(),
     packages=['actionslog'],
     include_package_data=True,
-    package_dir={'': 'src'},
     url='https://github.com/shtalinberg/django-actions-logger',
     license='MIT',
     author='Oleksandr Shtalinberg',
