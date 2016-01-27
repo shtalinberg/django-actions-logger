@@ -15,6 +15,22 @@ project = __import__(PROJECT_NAME)
 
 root_dir = os.path.dirname(__file__)
 
+
+if root_dir:
+    os.chdir(root_dir)
+
+data_files = []
+for dirpath, dirnames, filenames in os.walk(PROJECT_NAME):
+    for i, dirname in enumerate(dirnames):
+        if dirname.startswith('.'):
+            del dirnames[i]
+    if '__init__.py' in filenames:
+        continue
+    elif filenames:
+        for f in filenames:
+            data_files.append(os.path.join(
+                dirpath[len(PROJECT_NAME) + 1:], f))
+
 with open(os.path.join(root_dir, 'README.rst')) as readme:
     README = readme.read()
 
@@ -36,6 +52,7 @@ setup(
     long_description=README,
     keywords='django actions log action logger',
     install_requires=install_requires,
+    package_data={PROJECT_NAME: data_files},
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
