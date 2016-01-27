@@ -62,4 +62,5 @@ target/
 .ipynb_checkpoints
 
 .venv/
-
+*.sqlite3
+tests/db.sqlite3

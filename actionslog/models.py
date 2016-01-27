@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import json
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import QuerySet, Q
@@ -104,10 +105,10 @@ class LogActionManager(models.Manager):
 @python_2_unicode_compatible
 class LogAction(models.Model):
 
-    CREATE = 10
-    VIEW = 15
-    CHANGE = 20
-    DELETE = 30
+    CREATE = 100
+    VIEW = 150
+    CHANGE = 200
+    DELETE = 300
 
     ACTION_CHOICES = (
         (CREATE, _("create")),
@@ -119,7 +120,7 @@ class LogAction(models.Model):
     content_type = models.ForeignKey('contenttypes.ContentType', related_name='+',
         verbose_name=_("content type"), blank=True, null=True, on_delete=models.CASCADE)
     object_id = models.BigIntegerField(verbose_name=_("object id"),
-        bank=True, null=True, db_index=True,)
+        blank=True, null=True, db_index=True,)
     object_pk = models.CharField(verbose_name=_("object pk"), max_length=255,
         blank=True, null=True, db_index=True)
 
@@ -129,7 +130,7 @@ class LogAction(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("user"),
         blank=True, null=True, on_delete=models.SET_NULL, related_name='actionlogs')
     action = models.PositiveSmallIntegerField(verbose_name=_("action"),
-        choices=ACTION_CHOICES, bank=True, null=True)
+        choices=ACTION_CHOICES, blank=True, null=True)
 
     action_info = JSONField(verbose_name=_("action information"), blank=True, null=True, )
     changes = models.TextField(blank=True, verbose_name=_("change message"))
