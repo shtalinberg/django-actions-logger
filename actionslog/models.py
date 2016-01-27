@@ -26,6 +26,7 @@ class LogActionManager(models.Manager):
         :rtype: LogEntry
         """
         instance = kwargs.get('instance', None)
+        changes = kwargs.get('changes', None)
         pk = self._get_pk_value(instance)
 
         if instance is not None and changes is not None:
