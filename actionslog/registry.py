@@ -9,7 +9,7 @@ class ActionslogModelRegistry(object):
     A registry that keeps track of the models that use actionslog to track changes.
     """
     def __init__(self, create=True, update=True, delete=True, custom=None):
-        from actionslog.receivers import log_create, log_update, log_delete
+        from actionslog.receivers import action_log_create, action_log_update, action_log_delete
 
         self._registry = {}
         self._signals = {}
@@ -95,7 +95,6 @@ class ActionslogModelRegistry(object):
             'include_fields': self._registry[model]['include_fields'],
             'exclude_fields': self._registry[model]['exclude_fields'],
         }
-
 
 
 actionslog = ActionslogModelRegistry()
