@@ -7,7 +7,7 @@ from django.conf import settings
 from django.db.models.signals import pre_save
 from django.utils.functional import curry
 from django.apps import apps
-from actionslog.models import LogEntry
+from actionslog.models import LogAction
 
 
 threadlocal = threading.local()
@@ -37,14 +37,14 @@ class ActionslogMiddleware(object):
         # Connect signal for automatic logging
         if hasattr(request, 'user') and hasattr(request.user, 'is_authenticated') and request.user.is_authenticated():
             set_user = curry(self.set_user, request.user)
-            pre_save.connect(set_user, sender=LogEntry, dispatch_uid=threadlocal.actionslog['signal_duid'], weak=False)
+            pre_save.connect(set_user, sender=LogAction, dispatch_uid=threadlocal.actionslog['signal_duid'], weak=False)
 
     def process_response(self, request, response):
         """
         Disconnects the signal receiver to prevent it from staying active.
         """
         if hasattr(threadlocal, 'actionslog'):
-            pre_save.disconnect(sender=LogEntry, dispatch_uid=threadlocal.actionslog['signal_duid'])
+            pre_save.disconnect(sender=LogAction, dispatch_uid=threadlocal.actionslog['signal_duid'])
 
         return response
 
@@ -53,7 +53,7 @@ class ActionslogMiddleware(object):
         Disconnects the signal receiver to prevent it from staying active in case of an exception.
         """
         if hasattr(threadlocal, 'actionslog'):
-            pre_save.disconnect(sender=LogEntry, dispatch_uid=threadlocal.actionslog['signal_duid'])
+            pre_save.disconnect(sender=LogAction, dispatch_uid=threadlocal.actionslog['signal_duid'])
 
         return None
 
@@ -68,7 +68,7 @@ class ActionslogMiddleware(object):
             auth_user_model = apps.get_model(app_label, model_name)
         except ValueError:
             auth_user_model = apps.get_model('auth', 'user')
-        if sender == LogEntry and isinstance(user, auth_user_model) and instance.user is None:
+        if sender == LogAction and isinstance(user, auth_user_model) and instance.user is None:
             instance.user = user
         if hasattr(threadlocal, 'actionslog'):
             instance.remote_ip = threadlocal.actionslog['remote_ip']
