@@ -1,8 +1,6 @@
 
 from __future__ import unicode_literals
 
-import json
-
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
@@ -19,13 +17,15 @@ from jsonfield import JSONField
 from .signals import action_logged
 from . import settings as app_conf
 
+import json
+
 
 class LogActionManager(models.Manager):
 
     def create_log_action(self, **kwargs):
         """
-        Helper method to create a new log entry. This method automatically populates some fields when no explicit value
-        is given.
+        Helper method to create a new log entry.
+        This method automatically populates some fields when no explicit value is given.
         :param instance: The model instance to log a change for.
         :type instance: Model
         :param kwargs: Field overrides for the :py:class:`LogAction` object.
@@ -47,31 +47,46 @@ class LogActionManager(models.Manager):
                 remote_ip = request.META.get('REMOTE_ADDR')
             kwargs.setdefault('remote_ip', remote_ip)
 
-
-        changes = kwargs.get('changes', None)
-
         if instance is not None:
             pk = self._get_pk_value(instance)
 
-            kwargs.setdefault('content_type', ContentType.objects.get_for_model(instance))
+            kwargs.setdefault(
+                'content_type',
+                ContentType.objects.get_for_model(instance)
+            )
             kwargs.setdefault('object_pk', pk)
             kwargs.setdefault('object_repr', smart_text(instance))
 
             if isinstance(pk, integer_types):
                 kwargs.setdefault('object_id', pk)
 
-            get_object_extra_info = getattr(instance, 'get_object_extra_info', None)
+            get_object_extra_info = getattr(
+                instance,
+                'get_object_extra_info',
+                None
+            )
 
             if callable(get_object_extra_info):
                 kwargs.setdefault('object_extra_info', get_object_extra_info())
 
-            # Delete log entries with the same pk as a newly created model. This should only be necessary when an pk is
-            # used twice.
+            # Delete log entries with the same pk as a newly created model.
+            # This should only be necessary when an pk is used twice.
             if kwargs.get('action', None) is LogAction.CREATE:
-                if kwargs.get('object_id', None) is not None and self.filter(content_type=kwargs.get('content_type'), object_id=kwargs.get('object_id')).exists():
-                    self.filter(content_type=kwargs.get('content_type'), object_id=kwargs.get('object_id')).delete()
+                is_obj_exists = self.filter(
+                    content_type=kwargs.get('content_type'),
+                    object_id=kwargs.get('object_id')
+                ).exists()
+
+                if kwargs.get('object_id', None) is not None and is_obj_exists:
+                    self.filter(
+                        content_type=kwargs.get('content_type'),
+                        object_id=kwargs.get('object_id')
+                    ).delete()
                 else:
-                    self.filter(content_type=kwargs.get('content_type'), object_pk=kwargs.get('object_pk', '')).delete()
+                    self.filter(
+                        content_type=kwargs.get('content_type'),
+                        object_pk=kwargs.get('object_pk', '')
+                    ).delete()
 
         action_log = self.create(**kwargs)
         action_logged.send(sender=LogAction, action=action_log)
@@ -135,28 +150,51 @@ def get_action_choices():
 @python_2_unicode_compatible
 class LogAction(models.Model):
 
-    content_type = models.ForeignKey('contenttypes.ContentType', related_name='+',
-        verbose_name=_("content type"), blank=True, null=True, on_delete=models.CASCADE)
-    object_id = models.BigIntegerField(verbose_name=_("object id"),
-        blank=True, null=True, db_index=True,)
-    object_pk = models.CharField(verbose_name=_("object pk"), max_length=255,
-        blank=True, null=True, db_index=True)
+    content_type = models.ForeignKey(
+        'contenttypes.ContentType', related_name='+',
+        verbose_name=_("content type"),
+        blank=True, null=True, on_delete=models.CASCADE
+    )
+    object_id = models.BigIntegerField(
+        verbose_name=_("object id"),
+        blank=True, null=True, db_index=True
+    )
+    object_pk = models.CharField(
+        verbose_name=_("object pk"), max_length=255,
+        blank=True, null=True, db_index=True
+    )
 
-    object_repr = models.TextField(verbose_name=_("object representation"), blank=True, null=True)
-    object_extra_info = JSONField(verbose_name=_("object information"), blank=True, null=True)
+    object_repr = models.TextField(
+        verbose_name=_("object representation"),
+        blank=True, null=True
+    )
+    object_extra_info = JSONField(
+        verbose_name=_("object information"),
+        blank=True, null=True
+    )
 
     session_key = models.CharField(_('session key'), max_length=40, blank=True, null=True)
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("user"),
-        blank=True, null=True, on_delete=models.SET_NULL, related_name='actionlogs')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, verbose_name=_("user"),
+        blank=True, null=True,
+        on_delete=models.SET_NULL, related_name='actionlogs'
+    )
 
     action = models.PositiveSmallIntegerField(verbose_name=_("action"), blank=True, null=True)
 
-    action_info = JSONField(verbose_name=_("action information"), blank=True, null=True, )
+    action_info = JSONField(
+        verbose_name=_("action information"),
+        blank=True, null=True
+    )
     changes = models.TextField(blank=True, verbose_name=_("change message"))
 
-    remote_ip = models.GenericIPAddressField(verbose_name=_("remote IP"), blank=True, null=True)
-    created_at = models.DateTimeField(verbose_name=_("created at"), auto_now_add=True, db_index=True)
+    remote_ip = models.GenericIPAddressField(
+        verbose_name=_("remote IP"), blank=True, null=True
+    )
+    created_at = models.DateTimeField(
+        verbose_name=_("created at"), auto_now_add=True, db_index=True
+    )
 
     objects = LogActionManager()
 
@@ -166,7 +204,15 @@ class LogAction(models.Model):
         verbose_name_plural = _("log actions")
 
     def __str__(self):
-        return _("Logged {repr:s}").format(repr=self.object_repr)
+        if self.object_repr:
+            return _("Logged {repr:s}").format(repr=self.object_repr)
+        elif self.action:
+            return _("Logged action, type: {action}, id: {id}").format(
+                action=self.get_action_display(),
+                id=self.id
+            )
+        else:
+            return _("Logged action, id: {id}").format(id=self.id)
 
     def __init__(self, *args, **kwargs):
         super(LogAction, self).__init__(*args, **kwargs)
@@ -179,7 +225,7 @@ class LogAction(models.Model):
                 lazy(get_action_choices, list)()
 
     def get_edited_object(self):
-        "Returns the edited object represented by this log entry"
+        """Returns the edited object represented by this log entry"""
         return self.content_type.get_object_for_this_type(pk=self.object_id)
 
     def get_admin_url(self):
@@ -187,7 +233,10 @@ class LogAction(models.Model):
         Returns the admin URL to edit the object represented by this log entry.
         """
         if self.content_type and self.object_id:
-            url_name = 'admin:%s_%s_change' % (self.content_type.app_label, self.content_type.model)
+            url_name = 'admin:%s_%s_change' % (
+                self.content_type.app_label,
+                self.content_type.model
+            )
             try:
                 return reverse(url_name, args=(quote(self.object_id),))
             except NoReverseMatch:
@@ -207,8 +256,10 @@ class LogAction(models.Model):
     @property
     def changes_str(self, colon=': ', arrow=smart_text(' \u2192 '), separator='; '):
         """
-        Return the changes recorded in this log entry as a string. The formatting of the string can be customized by
-        setting alternate values for colon, arrow and separator. If the formatting is still not satisfying, please use
+        Return the changes recorded in this log entry as a string.
+        The formatting of the string can be customized by
+        setting alternate values for colon, arrow and separator.
+        If the formatting is still not satisfying, please use
         :py:func:`LogAction.changes_dict` and format the string yourself.
         :param colon: The string to place between the field name and the values.
         :param arrow: The string to place between each old and new value.
@@ -228,4 +279,3 @@ class LogAction(models.Model):
             substrings.append(substring)
 
         return separator.join(substrings)
-
