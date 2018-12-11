@@ -12,10 +12,12 @@ from django.db.models import QuerySet, Q
 from django.utils.encoding import python_2_unicode_compatible, smart_text
 from django.utils.six import iteritems, integer_types
 from django.utils.translation import ugettext_lazy as _
+from django.utils.functional import lazy
 
 from jsonfield import JSONField
 
 from .signals import action_logged
+from . import settings as app_conf
 
 
 class LogActionManager(models.Manager):
@@ -126,35 +128,12 @@ class LogActionManager(models.Manager):
         return pk
 
 
+def get_action_choices():
+    return app_conf.LOG_ACTION_CHOICES
+
+
 @python_2_unicode_compatible
 class LogAction(models.Model):
-    CREATE = 100
-    SUCCESS = 110
-    ACTIVATE = 130
-    AUTH = 150
-    VIEW = 180
-    UPDATE = 200
-    SUSPEND = 250
-    UNSUSPEND = 260
-    DELETE = 300
-    TERMINATE = 500
-    FAILED = 999
-    ERROR = 1000
-
-    ACTION_CHOICES = (
-        (CREATE, _("create")),
-        (SUCCESS, _("success")),
-        (ACTIVATE, _("activate")),
-        (AUTH, _("authorize")),
-        (VIEW, _("view")),
-        (UPDATE, _("update")),
-        (SUSPEND, _("suspend")),
-        (UNSUSPEND, _("unsuspend")),
-        (DELETE, _("delete")),
-        (TERMINATE, _("terminate")),
-        (FAILED, _("failed")),
-        (ERROR, _("error")),
-    )
 
     content_type = models.ForeignKey('contenttypes.ContentType', related_name='+',
         verbose_name=_("content type"), blank=True, null=True, on_delete=models.CASCADE)
@@ -166,10 +145,12 @@ class LogAction(models.Model):
     object_repr = models.TextField(verbose_name=_("object representation"), blank=True, null=True)
     object_extra_info = JSONField(verbose_name=_("object information"), blank=True, null=True)
 
+    session_key = models.CharField(_('session key'), max_length=40, blank=True, null=True)
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, verbose_name=_("user"),
         blank=True, null=True, on_delete=models.SET_NULL, related_name='actionlogs')
-    action = models.PositiveSmallIntegerField(verbose_name=_("action"),
-        choices=ACTION_CHOICES, blank=True, null=True)
+
+    action = models.PositiveSmallIntegerField(verbose_name=_("action"), blank=True, null=True)
 
     action_info = JSONField(verbose_name=_("action information"), blank=True, null=True, )
     changes = models.TextField(blank=True, verbose_name=_("change message"))
@@ -186,6 +167,16 @@ class LogAction(models.Model):
 
     def __str__(self):
         return _("Logged {repr:s}").format(repr=self.object_repr)
+
+    def __init__(self, *args, **kwargs):
+        super(LogAction, self).__init__(*args, **kwargs)
+        try:
+            self._meta.get_field('action').choices = \
+                lazy(get_action_choices, list)()
+        except:
+            # for Django < 1.11
+            self._meta.get_field_by_name('action')[0]._choices = \
+                lazy(get_action_choices, list)()
 
     def get_edited_object(self):
         "Returns the edited object represented by this log entry"
