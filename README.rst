@@ -25,6 +25,17 @@ Quick start
 
 2. Run `python manage.py migrate` to create models.
 
+3. Set `AL_LOG_ACTION_CHOICES` in project settings.py file if need customize::
+
+    AL_LOG_ACTION_CHOICES = [
+        (CREATE, _("create")),
+        (SUCCESS, _("success")),
+        (VIEW, _("view")),
+        (UPDATE, _("update")),
+        (DELETE, _("delete")),
+        (ERROR, _("error")),
+    ]
+
 
 Usage
 -----
