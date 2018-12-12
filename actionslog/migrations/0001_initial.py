@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 ('changes', models.TextField(verbose_name='change message', blank=True)),
                 ('remote_ip', models.GenericIPAddressField(null=True, verbose_name='remote IP', blank=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
-                ('content_type', models.ForeignKey(related_name='+', verbose_name='content type', blank=True, to='contenttypes.ContentType', null=True)),
+                ('content_type', models.ForeignKey(related_name='+', on_delete=django.db.models.deletion.SET_NULL, verbose_name='content type', blank=True, to='contenttypes.ContentType', null=True)),
                 ('user', models.ForeignKey(related_name='actionlogs', on_delete=django.db.models.deletion.SET_NULL, verbose_name='user', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
             ],
             options={

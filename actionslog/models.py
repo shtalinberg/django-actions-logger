@@ -156,7 +156,7 @@ class LogAction(models.Model):
     content_type = models.ForeignKey(
         'contenttypes.ContentType', related_name='+',
         verbose_name=_("content type"),
-        blank=True, null=True, on_delete=models.CASCADE
+        blank=True, null=True, on_delete=models.SET_NULL
     )
     object_id = models.BigIntegerField(
         verbose_name=_("object id"),
