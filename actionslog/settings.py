@@ -44,5 +44,3 @@ LOG_ACTION_CHOICES = [
     (value[0], value[1])
     for value in AL_LOG_ACTION_SETTINGS
 ]
-
-
