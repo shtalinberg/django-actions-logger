@@ -4,16 +4,21 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import NoReverseMatch, reverse
+try:
+    from django.urls import NoReverseMatch, reverse
+except ImportError:
+    from django.core.urlresolvers import NoReverseMatch, reverse
 from django.db import models
 from django.db.models import QuerySet, Q
 from django.utils.encoding import python_2_unicode_compatible, smart_text
 from django.utils.six import iteritems, integer_types
 from django.utils.translation import ugettext_lazy as _
+from django.utils.functional import lazy
 
 from jsonfield import JSONField
 
 from .signals import action_logged
+from . import settings as app_conf
 
 import json
 
@@ -69,7 +74,7 @@ class LogActionManager(models.Manager):
 
             # Delete log entries with the same pk as a newly created model.
             # This should only be necessary when an pk is used twice.
-            if kwargs.get('action', None) is LogAction.CREATE:
+            if kwargs.get('action', None) is app_conf.CREATE:
                 is_obj_exists = self.filter(
                     content_type=kwargs.get('content_type'),
                     object_id=kwargs.get('object_id')
@@ -141,40 +146,17 @@ class LogActionManager(models.Manager):
         return pk
 
 
+def get_action_choices():
+    return app_conf.LOG_ACTION_CHOICES
+
+
 @python_2_unicode_compatible
 class LogAction(models.Model):
-    CREATE = 100
-    SUCCESS = 110
-    ACTIVATE = 130
-    AUTH = 150
-    VIEW = 180
-    UPDATE = 200
-    SUSPEND = 250
-    UNSUSPEND = 260
-    DELETE = 300
-    TERMINATE = 500
-    FAILED = 999
-    ERROR = 1000
-
-    ACTION_CHOICES = (
-        (CREATE, _("create")),
-        (SUCCESS, _("success")),
-        (ACTIVATE, _("activate")),
-        (AUTH, _("authorize")),
-        (VIEW, _("view")),
-        (UPDATE, _("update")),
-        (SUSPEND, _("suspend")),
-        (UNSUSPEND, _("unsuspend")),
-        (DELETE, _("delete")),
-        (TERMINATE, _("terminate")),
-        (FAILED, _("failed")),
-        (ERROR, _("error")),
-    )
 
     content_type = models.ForeignKey(
         'contenttypes.ContentType', related_name='+',
         verbose_name=_("content type"),
-        blank=True, null=True, on_delete=models.CASCADE
+        blank=True, null=True, on_delete=models.SET_NULL
     )
     object_id = models.BigIntegerField(
         verbose_name=_("object id"),
@@ -194,15 +176,15 @@ class LogAction(models.Model):
         blank=True, null=True
     )
 
+    session_key = models.CharField(_('session key'), max_length=40, blank=True, null=True)
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, verbose_name=_("user"),
         blank=True, null=True,
         on_delete=models.SET_NULL, related_name='actionlogs'
     )
-    action = models.PositiveSmallIntegerField(
-        verbose_name=_("action"),
-        choices=ACTION_CHOICES, blank=True, null=True
-    )
+
+    action = models.PositiveSmallIntegerField(verbose_name=_("action"), blank=True, null=True)
 
     action_info = JSONField(
         verbose_name=_("action information"),
@@ -234,6 +216,16 @@ class LogAction(models.Model):
             )
         else:
             return _("Logged action, id: {id}").format(id=self.id)
+
+    def __init__(self, *args, **kwargs):
+        super(LogAction, self).__init__(*args, **kwargs)
+        try:
+            self._meta.get_field('action').choices = \
+                lazy(get_action_choices, list)()
+        except:
+            # for Django < 1.11
+            self._meta.get_field_by_name('action')[0]._choices = \
+                lazy(get_action_choices, list)()
 
     def get_edited_object(self):
         """Returns the edited object represented by this log entry"""
