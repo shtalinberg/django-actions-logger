@@ -71,7 +71,7 @@ class LogActionManager(models.Manager):
 
             # Delete log entries with the same pk as a newly created model.
             # This should only be necessary when an pk is used twice.
-            if kwargs.get('action', None) is LogAction.CREATE:
+            if kwargs.get('action', None) is app_conf.CREATE:
                 is_obj_exists = self.filter(
                     content_type=kwargs.get('content_type'),
                     object_id=kwargs.get('object_id')
