@@ -227,6 +227,12 @@ class LogAction(models.Model):
             self._meta.get_field_by_name('action')[0]._choices = \
                 lazy(get_action_choices, list)()
 
+    def get_action_display(self):
+        for action in app_conf.LOG_ACTION_CHOICES:
+            if action[0] == self.action:
+                return action[1]
+        return _('Not provided')
+
     def get_edited_object(self):
         """Returns the edited object represented by this log entry"""
         return self.content_type.get_object_for_this_type(pk=self.object_id)
