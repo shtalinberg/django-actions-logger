@@ -4,7 +4,10 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import NoReverseMatch, reverse
+try:
+    from django.urls import NoReverseMatch, reverse
+except ImportError:
+    from django.core.urlresolvers import NoReverseMatch, reverse
 from django.db import models
 from django.db.models import QuerySet, Q
 from django.utils.encoding import python_2_unicode_compatible, smart_text
