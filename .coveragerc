@@ -1,0 +1,6 @@
+[run]
+source = actionslog
+branch = 1
+
+[report]
+omit = *tests*,*migrations*
