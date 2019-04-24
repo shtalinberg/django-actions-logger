@@ -7,7 +7,7 @@ env:
     MOZ_HEADLESS=1
   matrix:
   - TOXENV=py27-dj111
-  - TOXENV=py34-dj111
+  - TOXENV=py36-dj111
   - TOXENV=py36-dj21
   - TOXENV=py35-dj22
   - TOXENV=py36-dj22
