@@ -11,13 +11,10 @@ env:
   - TOXENV=py36-dj21
   - TOXENV=py35-dj22
   - TOXENV=py36-dj22
-  - TOXENV=py37-dj22
   - TOXENV=py36-djdev
-  - TOXENV=py37-djdev
 matrix:
   allow_failures:
     - env: TOXENV=py36-djdev
-    - env: TOXENV=py37-djdev
 install:
   - pip install tox codecov
 

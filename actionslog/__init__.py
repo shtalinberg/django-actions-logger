@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 default_app_config = 'actionslog.apps.ActionslogConfig'
 
 
-VERSION = (0, 3, 1)
+VERSION = (0, 4, 0)
 
 
 def get_version():
