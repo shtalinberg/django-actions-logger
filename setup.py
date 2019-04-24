@@ -7,7 +7,7 @@ VENV = os.path.join(ROOT, '.venv')
 VENV_LINK = os.path.join(VENV, 'local')
 
 install_requires = [
-    'Django>=1.8',
+    'Django>=1.11.20',
     'django-jsonfield>=0.9.15',
     'pytz>=2015.7',
 ]

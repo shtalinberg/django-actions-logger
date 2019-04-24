@@ -19,6 +19,12 @@ class ActionslogMiddleware(object):
     user from the request (or None if the user is not authenticated).
     """
 
+    def __init__(self, get_response=None):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
     def process_request(self, request):
         """
         Gets the current user from the request and prepares and connects a signal receiver with the user already
